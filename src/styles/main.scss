@@ -1,0 +1,884 @@
+@import './variables';
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: $bg-main;
+  color: $text-primary;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Fond d'écran dynamique (effet Ken Burns) */
+.bg-image {
+  position: fixed;
+  inset: -30px;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+  animation: bgMove 50s ease-in-out infinite;
+  filter: brightness(0.35) contrast(1.15) blur(2px);
+}
+
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(30, 40, 60, 0.2), transparent 70%),
+    linear-gradient(to bottom, rgba(10, 12, 16, 0.5), rgba(10, 12, 16, 0.95));
+}
+
+.pda-shell {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1.8rem 3rem;
+  gap: 1.2rem;
+}
+
+/* En-tête aéré */
+.pda-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+
+  .clock-block {
+    .time {
+      font-size: 3.8rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      background: linear-gradient(180deg, #ffffff 40%, rgba(255, 255, 255, 0.6));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      drop-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .date {
+      font-size: 1.1rem;
+      color: $text-secondary;
+      margin-top: 0.3rem;
+      text-transform: capitalize;
+    }
+  }
+
+  .status-badges {
+    display: flex;
+    gap: 1rem;
+
+    .badge {
+      padding: 0.5rem 1rem;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(18, 22, 30, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+
+      &.online {
+        color: $accent-green;
+        border-color: rgba($accent-green, 0.3);
+      }
+
+      &.offline {
+        color: #f85149;
+        border-color: rgba(#f85149, 0.3);
+        animation: pulse 2s infinite;
+      }
+
+      &.remote {
+        color: $accent-purple;
+        border-color: rgba($accent-purple, 0.3);
+      }
+    }
+  }
+}
+
+/* Grille principale 3 colonnes avec respiration */
+.widgets-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Styles des cartes */
+.pda-card {
+  background: rgba(18, 22, 30, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+
+  &.focused {
+    border-color: $accent-blue;
+    box-shadow: 0 0 35px rgba(88, 166, 255, 0.3), inset 0 0 15px rgba(88, 166, 255, 0.1);
+    transform: translateY(-4px) scale(1.01);
+    background: rgba(26, 32, 44, 0.75);
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, $accent-blue, $accent-purple);
+    }
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: $text-primary;
+    }
+
+    .icon {
+      font-size: 1.2rem;
+      opacity: 0.8;
+    }
+  }
+
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+
+/* Widget Agenda */
+.agenda-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+
+  .agenda-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    border-left: 4px solid $accent-blue;
+
+    .time-tag {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: $accent-blue;
+      min-width: 50px;
+    }
+
+    .details {
+      .title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: $text-primary;
+      }
+
+      .sub {
+        font-size: 0.8rem;
+        color: $text-secondary;
+        margin-top: 0.15rem;
+      }
+    }
+  }
+}
+
+/* Widget Météo */
+.weather-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.6rem;
+
+  .temp-main {
+    font-size: 3.8rem;
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.5));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .weather-desc {
+    font-size: 1.1rem;
+    color: $text-primary;
+    font-weight: 500;
+  }
+
+  .location {
+    font-size: 0.9rem;
+    color: $text-secondary;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+}
+
+/* Widget Hevy (Musculation & Corps) */
+.hevy-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+
+  .workout-summary {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.8rem;
+    border-radius: 10px;
+    margin-bottom: 0.8rem;
+
+    .workout-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: $accent-purple;
+    }
+
+    .workout-meta {
+      font-size: 0.75rem;
+      color: $text-secondary;
+      margin-top: 0.2rem;
+    }
+  }
+
+  .muscle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+
+    .muscle-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0.7rem;
+      border-radius: 8px;
+
+      .name {
+        font-size: 0.75rem;
+        color: $text-secondary;
+      }
+
+      .status {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 0.2rem;
+      }
+
+      &.worked {
+        border-color: rgba($accent-green, 0.4);
+
+        .status {
+          color: $accent-green;
+        }
+      }
+
+      &.rest {
+        .status {
+          color: $text-secondary;
+        }
+      }
+    }
+  }
+}
+
+/* Widget Actions Rapides */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.8rem;
+  height: 100%;
+
+  .action-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+
+    .action-icon {
+      font-size: 1.5rem;
+    }
+
+    .action-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: $text-primary;
+    }
+  }
+}
+
+.offline-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: $text-secondary;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+
+  span {
+    font-size: 2rem;
+  }
+}
+
+/* Styles pour les Trajets IDF (Erreur au lieu du mock) */
+.idf-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: $text-secondary;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem;
+
+  .error-icon {
+    font-size: 1.8rem;
+  }
+
+  .error-message {
+    color: #f85149;
+    font-weight: 600;
+  }
+}
+
+/* Adaptation du fond SVG du modèle anatomique */
+svg {
+  path {
+    fill: #21262d;
+  }
+}
+
+/* Style pour react-body-highlighter */
+.body-highlighter-wrapper {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+
+  .body-view-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+
+    .view-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #8b949e;
+      letter-spacing: 1px;
+    }
+
+    svg {
+      width: 5.5rem;
+      height: auto;
+      overflow: visible !important;
+
+      path,
+      polygon {
+        stroke: #30363d;
+        stroke-width: 0.8px;
+        transition: all 0.3s ease;
+      }
+
+      path[style*="fill"],
+      polygon[style*="fill"] {
+        filter: drop-shadow(0 0 6px rgba(88, 166, 255, 0.85));
+      }
+    }
+  }
+}
+
+/* Actions Rapides Agrandies */
+.quick-actions-grid.vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  .action-btn.large {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.7rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    .action-icon {
+      font-size: 1.1rem;
+    }
+
+    .action-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #f0f6fc;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: #58a6ff;
+    }
+  }
+}
+
+/* Modale haute lisibilité */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 20px;
+  width: 85vw;
+  max-width: 1100px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+
+  .modal-header {
+    padding: 1.8rem 2.5rem;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    h3 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #f0f6fc;
+      font-weight: 700;
+    }
+
+    .ref-tag {
+      font-size: 1.2rem;
+      color: #58a6ff;
+      font-weight: 600;
+      margin-top: 0.3rem;
+      display: inline-block;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: #8b949e;
+      font-size: 2rem;
+      cursor: pointer;
+      line-height: 1;
+
+      &:hover {
+        color: #f0f6fc;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 2.5rem;
+    overflow-y: auto;
+    color: #f0f6fc;
+    font-size: 1.45rem;
+    line-height: 2.2rem;
+    font-weight: 400;
+
+    p {
+      margin-bottom: 1.8rem;
+    }
+
+    strong {
+      color: #58a6ff;
+    }
+
+    .evangile-separator {
+      border: 0;
+      height: 1px;
+      background: #30363d;
+      margin: 2.5rem 0;
+    }
+
+    &::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 5px;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-backdrop.dark-overlay {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.top-right-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+
+  .jarvis-logo-inline {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    .jarvis-text {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, #58a6ff 60%, #1f6feb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.4));
+    }
+
+    .jarvis-subtext {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-top: 0.1rem;
+      letter-spacing: 0.1em;
+      filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.3));
+    }
+  }
+}
+
+
+
+@keyframes fadeIn {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+
+}
+
+
+
+.modal-backdrop.dark-overlay {
+
+  background: rgba(0, 0, 0, 0.85);
+
+  backdrop-filter: blur(8px);
+
+}
+
+
+
+.pure-apps-container {
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 2rem;
+
+
+
+  .pure-apps-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 2.5rem;
+
+    max-width: 500px;
+
+    margin-bottom: 2rem;
+
+
+
+    .pure-app-item {
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      cursor: pointer;
+
+      transition: transform 0.2s ease;
+
+
+
+      .pure-app-img {
+
+        width: 72px;
+
+        height: 72px;
+
+        border-radius: 18px;
+
+        object-fit: contain;
+
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+
+        transition: all 0.2s ease;
+
+      }
+
+
+
+      .pure-app-label {
+
+        margin-top: 0.6rem;
+
+        font-size: 0.85rem;
+
+        color: #f0f6fc;
+
+        font-weight: 500;
+
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+
+      }
+
+
+
+      &.focused {
+
+        transform: scale(1.15);
+
+
+
+        .pure-app-img {
+
+          box-shadow: 0 0 20px rgba(88, 166, 255, 0.8);
+
+          border: 2px solid #58a6ff;
+
+        }
+
+
+
+        .pure-app-label {
+
+          color: #58a6ff;
+
+          font-weight: 600;
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+
+  .pure-apps-hint {
+
+    font-size: 0.8rem;
+
+    color: #8b949e;
+
+    letter-spacing: 0.5px;
+
+  }
+
+}
+
+/* --- Style pour le Widget Actus Flash --- */
+.flash-news-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0;
+  min-height: 60px;
+
+  .flash-news-badge {
+    align-self: flex-start;
+    background: rgba(88, 166, 255, 0.15);
+    color: #58a6ff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 1px solid rgba(88, 166, 255, 0.3);
+  }
+
+  .flash-news-text {
+    font-size: 0.85rem;
+    color: #f0f6fc;
+    font-weight: 500;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Animation de transition douce pour le texte des actus */
+@keyframes flashFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade {
+  animation: flashFade 0.5s ease-out forwards;
+}
+
+/* --- Style pour le Widget Carrousel Plein Écran --- */
+.pda-card.carousel-card {
+  padding: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  /* Cache l'en-tête par défaut du PdaCard si présent */
+  .card-header {
+    display: none !important;
+  }
+
+  .card-body {
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+.carousel-widget-full {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+
+  .carousel-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transition: opacity 1.2s ease-in-out;
+    opacity: 0;
+    z-index: 0;
+
+    &.active {
+      opacity: 1;
+      z-index: 1;
+    }
+  }
+
+  /* Bandeau dégradé sombre en haut pour détacher le texte */
+  .carousel-overlay-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(to bottom, rgba(10, 12, 16, 0.8), transparent);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* Texte et indicateur parfaitement positionnés en haut */
+  .carousel-header-text {
+    position: absolute;
+    top: 0.9rem;
+    left: 1.2rem;
+    right: 1.2rem;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #f0f6fc;
+    font-weight: 600;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
+
+    .carousel-counter {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f0f6fc;
+    }
+  }
+}
