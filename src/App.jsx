@@ -11,7 +11,7 @@ import TransportWidget from './components/TransportWidget/TransportWidget';
 import ParoleModal from './components/ParoleModal/ParoleModal';
 import AppsMenuModal from './components/AppsMenuModal/AppsMenuModal';
 
-const DEFAULT_BG = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop";
+const DEFAULT_BG = "https://images.unsplash.com/photo-1774434923581-91ed9d8ee79b?q=80&w=1920&auto=format&fit=crop";
 const JARVIS_SERVER_URL = import.meta.env.VITE_JARVIS_SERVER_URL || 'http://localhost:5788';
 const NETWORK_CHECK_URL = 'https://www.google.com/generate_204';
 
