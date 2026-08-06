@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles/main.scss';
+import './styles/loading.scss';
+import './styles/offline.scss';
 import AgendaWidget from './components/AgendaWidget/AgendaWidget';
 import CarrouselWidget from './components/CarrouselWidget/CarrouselWidget';
 import ParoleWidget from './components/ParoleWidget/ParoleWidget';
@@ -11,6 +13,7 @@ import AppsMenuModal from './components/AppsMenuModal/AppsMenuModal';
 
 const DEFAULT_BG = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop";
 const JARVIS_SERVER_URL = import.meta.env.VITE_JARVIS_SERVER_URL || 'http://localhost:5788';
+const NETWORK_CHECK_URL = 'https://www.google.com/generate_204';
 
 const APPS_LIST = [
   { id: 3, name: "Netflix", action: "kodi-addon", target: "plugin.video.netflix", iconUrl: "/apps/netflix.png" },
@@ -21,6 +24,7 @@ const APPS_LIST = [
 export default function App() {
   const [time, setTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isLoading, setIsLoading] = useState(true);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const TOTAL_WIDGETS = 6;
 
@@ -42,6 +46,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const bootTimer = window.setTimeout(() => setIsLoading(false), 10000);
+    return () => window.clearTimeout(bootTimer);
+  }, []);
+
+  useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
@@ -49,6 +58,49 @@ export default function App() {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const checkNetwork = async () => {
+      if (!navigator.onLine) {
+        if (!isCancelled) {
+          setIsOnline(false);
+        }
+        return;
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+
+        await fetch(NETWORK_CHECK_URL, {
+          method: 'HEAD',
+          mode: 'no-cors',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        window.clearTimeout(timeoutId);
+
+        if (!isCancelled) {
+          setIsOnline(true);
+        }
+      } catch {
+        if (!isCancelled) {
+          setIsOnline(false);
+        }
+      }
+    };
+
+    checkNetwork();
+    const networkTimer = window.setInterval(checkNetwork, 15000);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(networkTimer);
     };
   }, []);
 
@@ -181,6 +233,56 @@ export default function App() {
 
   const isTodayAgenda = new Date().toDateString() === agendaDate.toDateString();
   const formattedAgendaDateLabel = agendaDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  if (isLoading) {
+    return (
+      <div className="loading-screen" role="status" aria-live="polite" aria-label="Chargement de Jarvis">
+        <div className="loading-backdrop" />
+        <div className="loading-shell">
+          <div className="loading-rings" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+
+          <div className="loading-wordmark">
+            <span className="loading-kicker">Boot sequence</span>
+            <span className="loading-title">Jarvis</span>
+            <span className="loading-subtitle">Initialisation de l’interface</span>
+          </div>
+
+          <div className="loading-progress" aria-hidden="true">
+            <span />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isOnline) {
+    return (
+      <div className="offline-screen" role="status" aria-live="polite" aria-label="Jarvis hors ligne">
+        <div className="offline-backdrop" />
+        <div className="offline-shell">
+          <div className="offline-radar" aria-hidden="true">
+            <span className="offline-ring" />
+            <span className="offline-ring" />
+            <span className="offline-dot" />
+          </div>
+
+          <div className="offline-wordmark">
+            <span className="offline-kicker">Network status</span>
+            <span className="offline-title">Jarvis</span>
+            <span className="offline-subtitle">Connexion réseau indisponible</span>
+          </div>
+
+          <p className="offline-message">
+            Les services en ligne sont en pause. L’interface attend le retour du réseau pour reprendre normalement.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
