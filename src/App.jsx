@@ -12,12 +12,9 @@ import AppsMenuModal from './components/AppsMenuModal/AppsMenuModal';
 const DEFAULT_BG = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop";
 
 const APPS_LIST = [
-  { id: 1, name: "Instagram", iconUrl: "/apps/instagram.png" },
-  { id: 2, name: "Spotify", iconUrl: "/apps/spotify.png" },
-  { id: 3, name: "Netflix", iconUrl: "/apps/netflix.png" },
-  { id: 4, name: "YouTube", iconUrl: "/apps/youtube.png" },
-  { id: 5, name: "Prime Vidéo", iconUrl: "/apps/prime.png" },
-  { id: 6, name: "Galerie", iconUrl: "/apps/gallery.webp" },
+  { id: 3, name: "Netflix", action: "kodi-addon", target: "plugin.video.netflix", iconUrl: "/apps/netflix.png" },
+  { id: 4, name: "YouTube", action: "kodi-addon", target: "plugin.video.youtube", iconUrl: "/apps/youtube.png" },
+  { id: 5, name: "Prime Vidéo", action: "kodi-addon", target: "plugin.video.primevideo", iconUrl: "/apps/prime.png" },
 ];
 
 export default function App() {
@@ -54,7 +51,6 @@ export default function App() {
     };
   }, []);
 
-
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (showModal) {
@@ -85,6 +81,30 @@ export default function App() {
         } else if (e.key === 'ArrowUp') {
           setSelectedAppIndex((prev) => (prev - 3 >= 0 ? prev - 3 : prev));
         } else if (e.key === 'Enter' || e.key === ' ') {
+          const currentApp = APPS_LIST[selectedAppIndex];
+          
+          if (currentApp) {
+            if (currentApp.action === "url") {
+              window.open(currentApp.target, '_blank');
+            } else if (currentApp.action === "kodi-addon") {
+              fetch('/jsonrpc', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  jsonrpc: "2.0",
+                  method: "Addons.ExecuteAddon",
+                  params: { addonid: currentApp.target },
+                  id: 1
+                })
+              })
+              .then(res => res.json())
+              .then(data => console.log("Kodi a lancé l'app :", data))
+              .catch(err => console.error("Erreur de communication avec Kodi :", err));
+            } else if (currentApp.action === "gallery") {
+              console.log("Ouverture de la galerie Jarvis");
+            }
+          }
+
           setShowAppsMenu(false);
         }
         return;
@@ -157,7 +177,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex, showModal, isAgendaLocked, showAppsMenu]);
+  }, [focusedIndex, showModal, isAgendaLocked, showAppsMenu, selectedAppIndex]);
 
   const isTodayAgenda = new Date().toDateString() === agendaDate.toDateString();
   const formattedAgendaDateLabel = agendaDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
