@@ -1,5 +1,4 @@
 # Jarvis PDA Desk
-
 Ce projet est un assistant personnel pour écran en lecture seul, conçu pour fonctionner avec un pavé directionnel et un bouton (résumons cela à une télécommande). Il est développé en React et utilise Vite pour le bundling. L'application est conçue pour être déployée sur un Raspberry Pi, mais peut également fonctionner sur d'autres systèmes.
 
 ## Fonctionnalités
@@ -9,9 +8,7 @@ Ce projet est un assistant personnel pour écran en lecture seul, conçu pour fo
 - Carrousel d'images personnalisables.
 
 ## Configuration de la dépendance
-
 Suivez l'installation du service [jarvis-pi-backend](https://github.com/ewenrdo/jarvis-pi-backend).
 
 ## Crédits
-
 Développé par Ewen Rodrigues de Oliveira.
