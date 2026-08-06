@@ -8,6 +8,10 @@ Ce projet est un assistant personnel pour écran en lecture seul, conçu pour fo
 - Affichage de la météo locale.
 - Carrousel d'images personnalisables.
 
+## Configuration de la dépendance
+
+Suivez l'installation du service [jarvis-pi-backend](https://github.com/ewenrdo/jarvis-pi-backend).
+
 ## Crédits
 
 Développé par Ewen Rodrigues de Oliveira.
