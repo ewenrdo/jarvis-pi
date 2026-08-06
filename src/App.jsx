@@ -10,6 +10,7 @@ import ParoleModal from './components/ParoleModal/ParoleModal';
 import AppsMenuModal from './components/AppsMenuModal/AppsMenuModal';
 
 const DEFAULT_BG = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop";
+const JARVIS_SERVER_URL = import.meta.env.VITE_JARVIS_SERVER_URL || 'http://localhost:5788';
 
 const APPS_LIST = [
   { id: 3, name: "Netflix", action: "kodi-addon", target: "plugin.video.netflix", iconUrl: "/apps/netflix.png" },
@@ -82,24 +83,23 @@ export default function App() {
           setSelectedAppIndex((prev) => (prev - 3 >= 0 ? prev - 3 : prev));
         } else if (e.key === 'Enter' || e.key === ' ') {
           const currentApp = APPS_LIST[selectedAppIndex];
-          
+
           if (currentApp) {
             if (currentApp.action === "url") {
               window.open(currentApp.target, '_blank');
             } else if (currentApp.action === "kodi-addon") {
-              fetch('/jsonrpc', {
+
+              fetch(`${JARVIS_SERVER_URL}/api/launch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  jsonrpc: "2.0",
-                  method: "Addons.ExecuteAddon",
-                  params: { addonid: currentApp.target },
-                  id: 1
+                  addonid: currentApp.target
                 })
               })
-              .then(res => res.json())
-              .then(data => console.log("Kodi a lancé l'app :", data))
-              .catch(err => console.error("Erreur de communication avec Kodi :", err));
+                .then(res => res.json())
+                .then(data => console.log("Kodi lancé via le serveur Jarvis :", data))
+                .catch(err => console.error("Erreur avec le serveur natif Jarvis :", err));
+
             } else if (currentApp.action === "gallery") {
               console.log("Ouverture de la galerie Jarvis");
             }
