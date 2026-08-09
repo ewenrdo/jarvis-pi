@@ -10,6 +10,7 @@ import FlashNewsWidget from './components/FlashNewsWidget/FlashNewsWidget';
 import TransportWidget from './components/TransportWidget/TransportWidget';
 import ParoleModal from './components/ParoleModal/ParoleModal';
 import AppsMenuModal from './components/AppsMenuModal/AppsMenuModal';
+import RenaultCarWidget from './components/RenaultCarWidget/RenaultCarWidget';
 
 const DEFAULT_BG = "https://images.unsplash.com/photo-1774434923581-91ed9d8ee79b?q=80&w=1920&auto=format&fit=crop";
 const JARVIS_SERVER_URL = import.meta.env.VITE_JARVIS_SERVER_URL || 'http://localhost:5788';
@@ -26,7 +27,7 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isLoading, setIsLoading] = useState(true);
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const TOTAL_WIDGETS = 6;
+  const TOTAL_WIDGETS = 7;
 
   const [agendaDate, setAgendaDate] = useState(new Date());
   const [isAgendaLocked, setIsAgendaLocked] = useState(false);
@@ -46,7 +47,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const bootTimer = window.setTimeout(() => setIsLoading(false), 10000);
+    const bootTimer = window.setTimeout(() => setIsLoading(false), 1);
     return () => window.clearTimeout(bootTimer);
   }, []);
 
@@ -311,25 +312,33 @@ export default function App() {
         </header>
 
         <div className="widgets-grid">
-          <AgendaWidget
-            focused={focusedIndex === 0}
-            isOnline={isOnline}
-            isAgendaLocked={isAgendaLocked}
-            isTodayAgenda={isTodayAgenda}
-            formattedAgendaDateLabel={formattedAgendaDateLabel}
-            agendaDate={agendaDate}
-            agendaContainerRef={agendaContainerRef}
-          />
+          <div className="agenda-transport-stack">
+            <div className="agenda-slot">
+              <AgendaWidget
+                focused={focusedIndex === 0}
+                isOnline={isOnline}
+                isAgendaLocked={isAgendaLocked}
+                isTodayAgenda={isTodayAgenda}
+                formattedAgendaDateLabel={formattedAgendaDateLabel}
+                agendaDate={agendaDate}
+                agendaContainerRef={agendaContainerRef}
+              />
+            </div>
+            <div className="transport-slot">
+              <TransportWidget focused={focusedIndex === 1} isOnline={isOnline} />
+            </div>
+          </div>
+
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <CarrouselWidget focused={focusedIndex === 1} />
-            <ParoleWidget focused={focusedIndex === 2} isOnline={isOnline} onOpen={() => setShowModal(true)} onParoleLoaded={setParole} />
+            <CarrouselWidget focused={focusedIndex === 2} />
+            <ParoleWidget focused={focusedIndex === 3} isOnline={isOnline} onOpen={() => setShowModal(true)} onParoleLoaded={setParole} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <WeatherWidget focused={focusedIndex === 3} isOnline={isOnline} />
-            <FlashNewsWidget focused={focusedIndex === 4} isOnline={isOnline} />
-            <TransportWidget focused={focusedIndex === 5} isOnline={isOnline} />
+            <WeatherWidget focused={focusedIndex === 4} isOnline={isOnline} />
+            <FlashNewsWidget focused={focusedIndex === 5} isOnline={isOnline} />
+            <RenaultCarWidget focused={focusedIndex === 6} isOnline={isOnline} />
           </div>
         </div>
       </div>
