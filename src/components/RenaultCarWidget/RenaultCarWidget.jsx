@@ -80,7 +80,7 @@ export default function RenaultCarWidget({ focused, isOnline }) {
 
                         {isUnder50 && (
                             <div className="renault-car-alert">
-                                ⚠️ Autonomie sous les 50% : Pensez à remplir la voiture !
+                                Autonomie sous les 50% : pensez à faire le plein.
                             </div>
                         )}
                     </div>
