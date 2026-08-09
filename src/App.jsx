@@ -37,9 +37,30 @@ export default function App() {
 
     const [parole, setParole] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [activeNotificationIndex, setActiveNotificationIndex] = useState(null);
 
     const agendaContainerRef = useRef(null);
     const modalBodyRef = useRef(null);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const response = await fetch(`${JARVIS_SERVER_URL}/api/notifications`);
+                if (!response.ok) throw new Error('Erreur de récupération des notifications');
+                const data = await response.json();
+                setNotifications(data);
+                setActiveNotificationIndex(data.length > 0 ? 0 : null);
+            } catch (error) {
+                console.error('Erreur lors de la récupération des notifications :', error);
+                setNotifications([]);
+            }
+        }
+
+        fetchNotifications();
+        const notificationsTimer = setInterval(fetchNotifications, 60 * 1000); // toutes les minutes
+        return () => clearInterval(notificationsTimer);
+    }, []);
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -47,7 +68,7 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        const bootTimer = window.setTimeout(() => setIsLoading(false), 10 * 1000); // 10 secondes pour simuler le boot de l'interface
+        const bootTimer = window.setTimeout(() => setIsLoading(false), 1 * 1000); // 10 secondes pour simuler le boot de l'interface
         return () => window.clearTimeout(bootTimer);
     }, []);
 
@@ -105,8 +126,34 @@ export default function App() {
         };
     }, []);
 
+    const currentNotification = notifications[activeNotificationIndex] ?? null;
+
+    const handleNotificationClose = async () => {
+        if (activeNotificationIndex !== null) {
+            const response = await fetch(`${JARVIS_SERVER_URL}/api/notifications/${currentNotification.id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.ok) {
+                setNotifications((prev) => prev.filter((_, index) => index !== activeNotificationIndex));
+                setActiveNotificationIndex(null);
+            } else {
+                console.error('Erreur lors de la suppression de la notification :', response.statusText);
+            }
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (e) => {
+            if (currentNotification) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleNotificationClose();
+                }
+                return;
+            }
+
             if (showModal) {
                 if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Enter' || e.key === ' ') {
                     setShowModal(false);
@@ -230,7 +277,7 @@ export default function App() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [focusedIndex, showModal, isAgendaLocked, showAppsMenu, selectedAppIndex]);
+    }, [activeNotificationIndex, currentNotification, focusedIndex, showModal, isAgendaLocked, showAppsMenu, selectedAppIndex, notifications.length]);
 
     const isTodayAgenda = new Date().toDateString() === agendaDate.toDateString();
     const formattedAgendaDateLabel = agendaDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -349,6 +396,36 @@ export default function App() {
 
             {showAppsMenu && (
                 <AppsMenuModal apps={APPS_LIST} selectedAppIndex={selectedAppIndex} onClose={() => setShowAppsMenu(false)} />
+            )}
+
+            {currentNotification && (
+                <div className="notification-overlay" role="dialog" aria-modal="true" aria-labelledby="notification-title">
+                    <div className="notification-modal">
+                        <div className="notification-counter">
+                            {activeNotificationIndex + 1} / {notifications.length}
+                        </div>
+                        <div className="notification-header">
+                            <h2 id="notification-title">{currentNotification.title}</h2>
+                            {currentNotification.datetime && (
+                                <span className="notification-date">
+                                    {new Date(currentNotification.datetime).toLocaleDateString('fr-FR', {
+                                        day: '2-digit',
+                                        month: 'long',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                            )}
+                        </div>
+                        <p>{currentNotification.content}</p>
+                        <div className="notification-actions">
+                            <button type="button" className="notification-ok" onClick={handleNotificationClose}>
+                                D'accord
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );
