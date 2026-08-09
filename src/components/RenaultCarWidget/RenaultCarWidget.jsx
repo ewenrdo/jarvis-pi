@@ -70,7 +70,7 @@ export default function RenaultCarWidget({ focused, isOnline }) {
                                 <span className="labelStyle">Carburant</span>
                                 <span className="valueStyle">{dataCar.fuel_quantity_l ? `${dataCar.fuel_quantity_l} L` : 'N/C'}</span>
                             </div>
-                            <div className={`parallelogramStyle ${isUnder50 ? 'parallelogramStyle-alert' : ''}`}>
+                            <div className={`parallelogramStyle ${isUnder50 ? 'parallelogramStyle-alert' : 'parallelogramStyle-normal'}`}>
                                 <span className="labelStyle">Niveau</span>
                                 <span className={`valueStyle ${isUnder50 ? 'valueStyle-alert' : 'valueStyle-normal'}`}>
                                     {dataCar.fuel_percentage ? `${(dataCar.fuel_percentage).toFixed(0)}%` : 'N/C'}
