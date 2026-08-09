@@ -137,7 +137,11 @@ export default function App() {
 
             if (response.ok) {
                 setNotifications((prev) => prev.filter((_, index) => index !== activeNotificationIndex));
-                setActiveNotificationIndex(null);
+                setActiveNotificationIndex((prevIndex => {
+                    if (prevIndex === null) return null;
+                    const newIndex = prevIndex - 1;
+                    return newIndex >= 0 ? newIndex : (notifications.length > 1 ? 0 : null);
+                }));
             } else {
                 console.error('Erreur lors de la suppression de la notification :', response.statusText);
             }
