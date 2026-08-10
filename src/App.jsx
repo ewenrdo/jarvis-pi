@@ -11,6 +11,11 @@ import TransportWidget from './components/TransportWidget/TransportWidget';
 import ParoleModal from './components/ParoleModal/ParoleModal';
 import AppsMenuModal from './components/AppsMenuModal/AppsMenuModal';
 import RenaultCarWidget from './components/RenaultCarWidget/RenaultCarWidget';
+import useSound from 'use-sound';
+
+import switchSound from './assets/sounds/switch.mp3';
+import notificationSound from './assets/sounds/notification.mp3';
+import menuSound from './assets/sounds/menu.mp3';
 
 const DEFAULT_BG = "https://images.unsplash.com/photo-1774434923581-91ed9d8ee79b?q=80&w=1920&auto=format&fit=crop";
 const JARVIS_SERVER_URL = import.meta.env.VITE_JARVIS_SERVER_URL || 'http://localhost:5788';
@@ -43,6 +48,10 @@ export default function App() {
     const agendaContainerRef = useRef(null);
     const modalBodyRef = useRef(null);
 
+      const [playSwitch] = useSound(switchSound);
+      const [playNotification] = useSound(notificationSound);
+        const [playMenu] = useSound(menuSound);
+
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
@@ -51,6 +60,9 @@ export default function App() {
                 const data = await response.json();
                 setNotifications(data);
                 setActiveNotificationIndex(data.length > 0 ? 0 : null);
+                if(data.length > 0) {
+                    playNotification();
+                }
             } catch (error) {
                 console.error('Erreur lors de la récupération des notifications :', error);
                 setNotifications([]);
@@ -179,12 +191,16 @@ export default function App() {
                     setShowAppsMenu(false);
                 } else if (e.key === 'ArrowRight') {
                     setSelectedAppIndex((prev) => (prev + 1) % APPS_LIST.length);
+                    playSwitch();
                 } else if (e.key === 'ArrowLeft') {
                     setSelectedAppIndex((prev) => (prev - 1 + APPS_LIST.length) % APPS_LIST.length);
+                    playSwitch();
                 } else if (e.key === 'ArrowDown') {
                     setSelectedAppIndex((prev) => (prev + 3 < APPS_LIST.length ? prev + 3 : prev));
+                    playSwitch();
                 } else if (e.key === 'ArrowUp') {
                     setSelectedAppIndex((prev) => (prev - 3 >= 0 ? prev - 3 : prev));
+                    playSwitch();
                 } else if (e.key === 'Enter' || e.key === ' ') {
                     const currentApp = APPS_LIST[selectedAppIndex];
 
@@ -257,10 +273,11 @@ export default function App() {
             }
 
             if (e.key === 'Enter' || e.key === ' ') {
-                if (focusedIndex === 2) {
+                if (focusedIndex === 3) {
                     setShowModal(true);
                 } else if (focusedIndex !== 0) {
                     setShowAppsMenu(true);
+                    playMenu();
                     setSelectedAppIndex(0);
                 }
                 return;
@@ -271,10 +288,10 @@ export default function App() {
             }
 
             switch (e.key) {
-                case 'ArrowRight': setFocusedIndex((prev) => (prev + 1) % TOTAL_WIDGETS); break;
-                case 'ArrowLeft': setFocusedIndex((prev) => (prev - 1 + TOTAL_WIDGETS) % TOTAL_WIDGETS); break;
-                case 'ArrowDown': setFocusedIndex((prev) => (prev + 1 < TOTAL_WIDGETS ? prev + 1 : prev)); break;
-                case 'ArrowUp': setFocusedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : prev)); break;
+                case 'ArrowRight': setFocusedIndex((prev) => (prev + 1) % TOTAL_WIDGETS); playSwitch(); break;
+                case 'ArrowLeft': setFocusedIndex((prev) => (prev - 1 + TOTAL_WIDGETS) % TOTAL_WIDGETS); playSwitch(); break;
+                case 'ArrowDown': setFocusedIndex((prev) => (prev + 1 < TOTAL_WIDGETS ? prev + 1 : prev)); playSwitch(); break;
+                case 'ArrowUp': setFocusedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : prev)); playSwitch(); break;
                 default: break;
             }
         };
