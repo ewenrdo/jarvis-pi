@@ -227,12 +227,17 @@ export default function AgendaWidget({
       locked={isAgendaLocked}
       title={isTodayAgenda ? 'Agenda du jour' : `Agenda (${formattedAgendaDateLabel})`}
       icon="📅"
-      bodyStyle={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 50px)' }}
+      bodyStyle={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 50px)', overflow: 'hidden' }}
     >
       <div
         className="agenda-scroll-area"
         ref={agendaContainerRef}
-        style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}
+        style={{
+          flex: '1 1 0px',
+          height: '0px',
+          overflowY: isAgendaLocked ? 'auto' : 'hidden',
+          paddingRight: '4px'
+        }}
       >
         {!isOnline ? (
           <OfflinePlaceholder label="Agenda indisponible (hors ligne)" />
