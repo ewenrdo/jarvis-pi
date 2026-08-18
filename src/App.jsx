@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import './styles/main.scss';
 import './styles/loading.scss';
 import './styles/offline.scss';
@@ -27,8 +27,24 @@ const APPS_LIST = [
     { id: 5, name: "Prime Vidéo", action: "kodi-addon", target: "plugin.video.primevideo", iconUrl: "/apps/prime.png" },
 ];
 
-export default function App() {
+// Composant d'horloge isolé pour éviter de rafraîchir tout le layout global chaque seconde
+const LiveClock = memo(function LiveClock() {
     const [time, setTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="clock-block">
+            <div className="time">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div className="date">{time.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+        </div>
+    );
+});
+
+export default function App() {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [isLoading, setIsLoading] = useState(true);
     const [focusedIndex, setFocusedIndex] = useState(0);
@@ -48,9 +64,34 @@ export default function App() {
     const agendaContainerRef = useRef(null);
     const modalBodyRef = useRef(null);
 
-      const [playSwitch] = useSound(switchSound);
-      const [playNotification] = useSound(notificationSound);
-        const [playMenu] = useSound(menuSound);
+    const [playSwitch] = useSound(switchSound);
+    const [playNotification] = useSound(notificationSound);
+    const [playMenu] = useSound(menuSound);
+
+    // Utilisation de refs pour stocker l'état actuel et éviter de recréer l'écouteur clavier en boucle
+    const stateRef = useRef({
+        activeNotificationIndex,
+        currentNotification: notifications[activeNotificationIndex] ?? null,
+        focusedIndex,
+        showModal,
+        isAgendaLocked,
+        showAppsMenu,
+        selectedAppIndex,
+        notificationsLength: notifications.length
+    });
+
+    useEffect(() => {
+        stateRef.current = {
+            activeNotificationIndex,
+            currentNotification: notifications[activeNotificationIndex] ?? null,
+            focusedIndex,
+            showModal,
+            isAgendaLocked,
+            showAppsMenu,
+            selectedAppIndex,
+            notificationsLength: notifications.length
+        };
+    });
 
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -67,20 +108,15 @@ export default function App() {
                 console.error('Erreur lors de la récupération des notifications :', error);
                 setNotifications([]);
             }
-        }
+        };
 
         fetchNotifications();
-        const notificationsTimer = setInterval(fetchNotifications, 60 * 1000); // toutes les minutes
+        const notificationsTimer = setInterval(fetchNotifications, 60 * 1000);
         return () => clearInterval(notificationsTimer);
-    }, []);
+    }, [playNotification]);
 
     useEffect(() => {
-        const timer = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    useEffect(() => {
-        const bootTimer = window.setTimeout(() => setIsLoading(false), 1 * 1000); // 10 secondes pour simuler le boot de l'interface
+        const bootTimer = window.setTimeout(() => setIsLoading(false), 1 * 1000);
         return () => window.clearTimeout(bootTimer);
     }, []);
 
@@ -100,9 +136,7 @@ export default function App() {
 
         const checkNetwork = async () => {
             if (!navigator.onLine) {
-                if (!isCancelled) {
-                    setIsOnline(false);
-                }
+                if (!isCancelled) setIsOnline(false);
                 return;
             }
 
@@ -118,14 +152,9 @@ export default function App() {
                 });
 
                 window.clearTimeout(timeoutId);
-
-                if (!isCancelled) {
-                    setIsOnline(true);
-                }
+                if (!isCancelled) setIsOnline(true);
             } catch {
-                if (!isCancelled) {
-                    setIsOnline(false);
-                }
+                if (!isCancelled) setIsOnline(false);
             }
         };
 
@@ -138,10 +167,9 @@ export default function App() {
         };
     }, []);
 
-    const currentNotification = notifications[activeNotificationIndex] ?? null;
-
     const handleNotificationClose = async () => {
-        if (activeNotificationIndex !== null) {
+        const { activeNotificationIndex, currentNotification, notificationsLength } = stateRef.current;
+        if (activeNotificationIndex !== null && currentNotification) {
             const response = await fetch(`${JARVIS_SERVER_URL}/api/notifications/${currentNotification.id}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
@@ -152,7 +180,7 @@ export default function App() {
                 setActiveNotificationIndex((prevIndex => {
                     if (prevIndex === null) return null;
                     const newIndex = prevIndex - 1;
-                    return newIndex >= 0 ? newIndex : (notifications.length > 1 ? 0 : null);
+                    return newIndex >= 0 ? newIndex : (notificationsLength > 1 ? 0 : null);
                 }));
             } else {
                 console.error('Erreur lors de la suppression de la notification :', response.statusText);
@@ -160,9 +188,27 @@ export default function App() {
         }
     };
 
+    // Écouteur global monté une seule fois pour éviter les saccades de recréation
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (currentNotification) {
+            const currentSt = stateRef.current;
+            const currentNotif = currentSt.currentNotification;
+
+            if (e.key === 'BrowserBack' || e.key === 'Backspace') {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (currentSt.showModal) {
+                    setShowModal(false);
+                } else if (currentSt.showAppsMenu) {
+                    setShowAppsMenu(false);
+                } else {
+                    setFocusedIndex(0);
+                }
+                return;
+            }
+
+            if (currentNotif) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     handleNotificationClose();
@@ -170,8 +216,8 @@ export default function App() {
                 return;
             }
 
-            if (showModal) {
-                if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Enter' || e.key === ' ') {
+            if (currentSt.showModal) {
+                if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
                     setShowModal(false);
                 } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                     if (modalBodyRef.current) {
@@ -186,8 +232,8 @@ export default function App() {
                 return;
             }
 
-            if (showAppsMenu) {
-                if (e.key === 'Escape' || e.key === 'Backspace') {
+            if (currentSt.showAppsMenu) {
+                if (e.key === 'Escape') {
                     setShowAppsMenu(false);
                 } else if (e.key === 'ArrowRight') {
                     setSelectedAppIndex((prev) => (prev + 1) % APPS_LIST.length);
@@ -202,42 +248,32 @@ export default function App() {
                     setSelectedAppIndex((prev) => (prev - 3 >= 0 ? prev - 3 : prev));
                     playSwitch();
                 } else if (e.key === 'Enter' || e.key === ' ') {
-                    const currentApp = APPS_LIST[selectedAppIndex];
+                    const currentApp = APPS_LIST[currentSt.selectedAppIndex];
 
                     if (currentApp) {
                         if (currentApp.action === "url") {
                             window.open(currentApp.target, '_blank');
                         } else if (currentApp.action === "kodi-addon") {
-
                             fetch(`${JARVIS_SERVER_URL}/api/launch`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    addonid: currentApp.target
-                                })
-                            })
-                                .then(res => res.json())
-                                .then(data => console.log("Kodi lancé via le serveur Jarvis :", data))
-                                .catch(err => console.error("Erreur avec le serveur natif Jarvis :", err));
-
-                        } else if (currentApp.action === "gallery") {
-                            console.log("Ouverture de la galerie Jarvis");
+                                body: JSON.stringify({ addonid: currentApp.target })
+                            }).catch(err => console.error("Erreur serveur Jarvis :", err));
                         }
                     }
-
                     setShowAppsMenu(false);
                 }
                 return;
             }
 
-            if (focusedIndex === 0) {
+            if (currentSt.focusedIndex === 0) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     setIsAgendaLocked((prev) => !prev);
                     return;
                 }
 
-                if (isAgendaLocked) {
+                if (currentSt.isAgendaLocked) {
                     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                         e.preventDefault();
                         setAgendaDate((prevDate) => {
@@ -246,36 +282,26 @@ export default function App() {
                             return newDate;
                         });
                         return;
-                    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                        if (agendaContainerRef.current) {
-                            e.preventDefault();
-                            const scrollAmount = 60;
-                            agendaContainerRef.current.scrollBy({
-                                top: e.key === 'ArrowDown' ? scrollAmount : -scrollAmount,
-                                behavior: 'smooth'
-                            });
-                        }
-                        return;
                     }
-                } else {
-                    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                        if (agendaContainerRef.current) {
-                            e.preventDefault();
-                            const scrollAmount = 60;
-                            agendaContainerRef.current.scrollBy({
-                                top: e.key === 'ArrowDown' ? scrollAmount : -scrollAmount,
-                                behavior: 'smooth'
-                            });
-                        }
-                        return;
+                }
+                
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    if (agendaContainerRef.current) {
+                        e.preventDefault();
+                        const scrollAmount = 60;
+                        agendaContainerRef.current.scrollBy({
+                            top: e.key === 'ArrowDown' ? scrollAmount : -scrollAmount,
+                            behavior: 'smooth'
+                        });
                     }
+                    return;
                 }
             }
 
             if (e.key === 'Enter' || e.key === ' ') {
-                if (focusedIndex === 3) {
+                if (currentSt.focusedIndex === 3) {
                     setShowModal(true);
-                } else if (focusedIndex !== 0) {
+                } else if (currentSt.focusedIndex !== 0) {
                     setShowAppsMenu(true);
                     playMenu();
                     setSelectedAppIndex(0);
@@ -296,32 +322,24 @@ export default function App() {
             }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeNotificationIndex, currentNotification, focusedIndex, showModal, isAgendaLocked, showAppsMenu, selectedAppIndex, notifications.length]);
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [playSwitch, playMenu]); // Dépendances stables uniquement
 
+    const currentNotification = notifications[activeNotificationIndex] ?? null;
     const isTodayAgenda = new Date().toDateString() === agendaDate.toDateString();
     const formattedAgendaDateLabel = agendaDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
     if (isLoading) {
         return (
-            <div className="loading-screen" role="status" aria-live="polite" aria-label="Chargement de Jarvis">
+            <div className="loading-screen" role="status" aria-live="polite">
                 <div className="loading-backdrop" />
                 <div className="loading-shell">
-                    <div className="loading-rings" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                    </div>
-
+                    <div className="loading-rings" aria-hidden="true"><span /><span /><span /></div>
                     <div className="loading-wordmark">
                         <span className="loading-kicker">Boot sequence</span>
                         <span className="loading-title">Jarvis</span>
                         <span className="loading-subtitle">Initialisation de l’interface</span>
-                    </div>
-
-                    <div className="loading-progress" aria-hidden="true">
-                        <span />
                     </div>
                 </div>
             </div>
@@ -330,24 +348,14 @@ export default function App() {
 
     if (!isOnline) {
         return (
-            <div className="offline-screen" role="status" aria-live="polite" aria-label="Jarvis hors ligne">
+            <div className="offline-screen" role="status" aria-live="polite">
                 <div className="offline-backdrop" />
                 <div className="offline-shell">
-                    <div className="offline-radar" aria-hidden="true">
-                        <span className="offline-ring" />
-                        <span className="offline-ring" />
-                        <span className="offline-dot" />
-                    </div>
-
                     <div className="offline-wordmark">
                         <span className="offline-kicker">Network status</span>
                         <span className="offline-title">Jarvis</span>
                         <span className="offline-subtitle">Connexion réseau indisponible</span>
                     </div>
-
-                    <p className="offline-message">
-                        Les services en ligne sont en pause. L’interface attend le retour du réseau pour reprendre normalement.
-                    </p>
                 </div>
             </div>
         );
@@ -360,10 +368,7 @@ export default function App() {
 
             <div className="pda-shell">
                 <header className="pda-header">
-                    <div className="clock-block">
-                        <div className="time">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                        <div className="date">{time.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
-                    </div>
+                    <LiveClock />
 
                     <div className="top-right-cluster">
                         <div className="jarvis-logo-inline">
@@ -397,7 +402,6 @@ export default function App() {
                         </div>
                     </div>
 
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <CarrouselWidget focused={focusedIndex === 2} />
                         <ParoleWidget focused={focusedIndex === 3} isOnline={isOnline} onOpen={() => setShowModal(true)} onParoleLoaded={setParole} />
@@ -420,24 +424,11 @@ export default function App() {
             )}
 
             {currentNotification && (
-                <div className="notification-overlay" role="dialog" aria-modal="true" aria-labelledby="notification-title">
+                <div className="notification-overlay" role="dialog" aria-modal="true">
                     <div className="notification-modal">
-                        <div className="notification-counter">
-                            {activeNotificationIndex + 1} / {notifications.length}
-                        </div>
+                        <div className="notification-counter">{activeNotificationIndex + 1} / {notifications.length}</div>
                         <div className="notification-header">
-                            <h2 id="notification-title">{currentNotification.title}</h2>
-                            {currentNotification.datetime && (
-                                <span className="notification-date">
-                                    {new Date(currentNotification.datetime).toLocaleDateString('fr-FR', {
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
-                                </span>
-                            )}
+                            <h2>{currentNotification.title}</h2>
                         </div>
                         <p>{currentNotification.content}</p>
                         <div className="notification-actions">
