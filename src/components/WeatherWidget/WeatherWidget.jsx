@@ -5,9 +5,13 @@ export default function WeatherWidget({ focused, isOnline }) {
   const [weather, setWeather] = useState({ temp: '--', desc: 'Chargement...', isLoaded: false });
 
   useEffect(() => {
+    let isSubscribed = true;
+
     const fetchWeather = async () => {
       if (!isOnline) {
-        setWeather({ temp: '--', desc: 'Hors ligne', isLoaded: false });
+        if (isSubscribed) {
+          setWeather({ temp: '--', desc: 'Hors ligne', isLoaded: false });
+        }
         return;
       }
 
@@ -18,7 +22,7 @@ export default function WeatherWidget({ focused, isOnline }) {
         if (!response.ok) throw new Error('Erreur météo');
 
         const data = await response.json();
-        if (data && data.current_weather && data.hourly) {
+        if (data && data.current_weather && data.hourly && isSubscribed) {
           const currentTemp = `${Math.round(data.current_weather.temperature)}°C`;
           const currentHourIndex = new Date().getHours();
           const remainingDayCodes = data.hourly.weathercode.slice(currentHourIndex);
@@ -52,13 +56,19 @@ export default function WeatherWidget({ focused, isOnline }) {
           setWeather({ temp: currentTemp, desc: description, isLoaded: true });
         }
       } catch {
-        setWeather({ temp: '--', desc: 'Erreur météo', isLoaded: false });
+        if (isSubscribed) {
+          setWeather({ temp: '--', desc: 'Erreur météo', isLoaded: false });
+        }
       }
     };
 
     fetchWeather();
-    const weatherInterval = setInterval(fetchWeather, 900000);
-    return () => clearInterval(weatherInterval);
+    const weatherInterval = setInterval(fetchWeather, 60 * 60 *1000);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(weatherInterval);
+    };
   }, [isOnline]);
 
   return (

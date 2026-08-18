@@ -5,10 +5,14 @@ export default function ParoleWidget({ focused, isOnline, onOpen, onParoleLoaded
   const [parole, setParole] = useState(null);
 
   useEffect(() => {
+    let isSubscribed = true;
+
     const fetchParole = async () => {
       if (!isOnline) {
-        setParole(null);
-        onParoleLoaded?.(null);
+        if (isSubscribed) {
+          setParole(null);
+          onParoleLoaded?.(null);
+        }
         return;
       }
 
@@ -19,7 +23,8 @@ export default function ParoleWidget({ focused, isOnline, onOpen, onParoleLoaded
 
         const data = await response.json();
         const evangiles = data?.messes?.[0]?.lectures?.filter((lecture) => lecture.type === 'evangile') || [];
-        if (evangiles.length > 0) {
+        
+        if (evangiles.length > 0 && isSubscribed) {
           const premier = evangiles[0];
           const fullContent = evangiles.map((entry) => entry.contenu).join('<hr class="evangile-separator" />');
           const combinedRefs = [...new Set(evangiles.map((entry) => entry.ref))].join(' / ');
@@ -34,11 +39,15 @@ export default function ParoleWidget({ focused, isOnline, onOpen, onParoleLoaded
           onParoleLoaded?.(nextParole);
         }
       } catch {
-        // The widget falls back to the loading state until a value is available.
+        // Le widget conserve son état ou gère l'absence de données sans bloquer l'interface
       }
     };
 
     fetchParole();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [isOnline, onParoleLoaded]);
 
   return (

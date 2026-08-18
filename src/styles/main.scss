@@ -4,6 +4,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  //font-size: 1.35rem;
 }
 
 body {
@@ -23,7 +24,6 @@ body {
   background-size: cover;
   background-position: center;
   z-index: 0;
-  animation: bgMove 50s ease-in-out infinite;
   filter: brightness(0.35) contrast(1.15) blur(2px);
 }
 
@@ -82,7 +82,6 @@ body {
       font-size: 0.85rem;
       font-weight: 600;
       background: rgba(18, 22, 30, 0.6);
-      backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       align-items: center;
@@ -140,8 +139,8 @@ body {
   flex: 1 1 0;
 }
 
-.agenda-slot > *,
-.transport-slot > * {
+.agenda-slot>*,
+.transport-slot>* {
   flex: 1;
   min-height: 0;
 }
@@ -226,8 +225,6 @@ body {
   justify-content: center;
   padding: 1.5rem;
   background: rgba(3, 6, 12, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .notification-modal {
@@ -299,9 +296,7 @@ body {
 
 /* Styles des cartes */
 .pda-card {
-  background: rgba(18, 22, 30, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(18, 22, 30, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 1.4rem 1.6rem;
@@ -648,7 +643,6 @@ svg {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -749,7 +743,6 @@ svg {
 
 .modal-backdrop.dark-overlay {
   background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
 }
 
 .top-right-cluster {
@@ -805,7 +798,6 @@ svg {
 
   background: rgba(0, 0, 0, 0.85);
 
-  backdrop-filter: blur(8px);
 
 }
 
@@ -1053,7 +1045,6 @@ svg {
 
     .carousel-counter {
       background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
       padding: 0.2rem 0.6rem;
       border-radius: 20px;
       font-size: 0.75rem;
@@ -1078,6 +1069,7 @@ svg {
 .parallelogramStyle-alert {
   border-color: #ff7b72;
 }
+
 .parallelogramStyle-normal {
   border-color: $accent-blue;
 }

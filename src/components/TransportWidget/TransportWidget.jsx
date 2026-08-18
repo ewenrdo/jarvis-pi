@@ -21,9 +21,7 @@ export default function TransportWidget({ focused, isOnline }) {
                 return;
             }
 
-            setIsTransportLoading(true);
-            setTransportError(null);
-
+            // Ne force l'état de chargement que lors du premier appel pour éviter les clignotements constants
             try {
                 const jarvis_server_url = import.meta.env.VITE_JARVIS_SERVER_URL;
                 const response = await fetch(`${jarvis_server_url}/api/idfm/next-departures`, {
@@ -34,16 +32,21 @@ export default function TransportWidget({ focused, isOnline }) {
 
                 if (!response.ok) throw new Error('Erreur de récupération des données IDFM');
                 const data = await response.json();
-                setNextDepartures(data)
+                setNextDepartures(data);
+                setTransportError(null);
             } catch {
                 setTransportError('Impossible de charger les départs');
-                setNextDepartures([]);
             } finally {
                 setIsTransportLoading(false);
             }
         };
 
         fetchTransportData();
+
+        // Rafraîchissement automatique toutes les 2 minutes pour actualiser les horaires en continu
+        const transportInterval = setInterval(fetchTransportData, 2 * 60 * 1000);
+
+        return () => clearInterval(transportInterval);
     }, [isOnline]);
 
     return (

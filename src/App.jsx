@@ -373,7 +373,7 @@ export default function App() {
                     <div className="top-right-cluster">
                         <div className="jarvis-logo-inline">
                             <span className="jarvis-text">JARVIS</span>
-                            <span className="jarvis-subtext">JARVIS OS 1.0</span>
+                            <span className="jarvis-subtext">JARVIS OS 1.1</span>
                         </div>
                         <div className="status-badges">
                             <div className={`badge ${isOnline ? 'online' : 'offline'}`}>

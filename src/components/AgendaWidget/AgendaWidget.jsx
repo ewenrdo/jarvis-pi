@@ -172,11 +172,16 @@ export default function AgendaWidget({
 
     const loadAllCalendars = async () => {
       if (!isOnline) {
-        setIsAgendaLoading(false);
+        if (isSubscribed) {
+          setIsAgendaLoading(false);
+          setEvents([]);
+        }
         return;
       }
 
-      setIsAgendaLoading(true);
+      if (isSubscribed) {
+        setIsAgendaLoading(true);
+      }
 
       const targetStart = new Date(agendaDate.getFullYear(), agendaDate.getMonth(), agendaDate.getDate(), 0, 0, 0);
       const targetEnd = new Date(agendaDate.getFullYear(), agendaDate.getMonth(), agendaDate.getDate(), 23, 59, 59);
@@ -189,6 +194,7 @@ export default function AgendaWidget({
       const activeSources = ICAL_SOURCES.filter((source) => source.shouldSync && source.url);
 
       for (const source of activeSources) {
+        if (!isSubscribed) break;
         try {
           const response = await fetch(source.url);
           if (!response.ok) continue;
@@ -197,7 +203,7 @@ export default function AgendaWidget({
           const sourceEvents = parseICSLight(rawText, targetStart, targetEnd, targetStr, source);
           combinedEvents = combinedEvents.concat(sourceEvents);
         } catch {
-          // ignore source failures and continue
+          // Ignore les échecs individuels de source pour ne pas bloquer les autres agendas
         }
       }
 

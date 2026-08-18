@@ -8,15 +8,21 @@ export default function FlashNewsWidget({ focused, isOnline }) {
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
 
   useEffect(() => {
+    let isSubscribed = true;
+
     const fetchFranceInfoNews = async () => {
       if (!isOnline) {
-        setNewsError('Hors ligne');
-        setIsNewsLoading(false);
+        if (isSubscribed) {
+          setNewsError('Hors ligne');
+          setIsNewsLoading(false);
+        }
         return;
       }
 
-      setIsNewsLoading(true);
-      setNewsError(null);
+      if (isSubscribed) {
+        setIsNewsLoading(true);
+        setNewsError(null);
+      }
 
       try {
         const rssUrl = encodeURIComponent('https://www.franceinfo.fr/titres.rss');
@@ -24,7 +30,7 @@ export default function FlashNewsWidget({ focused, isOnline }) {
         if (!response.ok) throw new Error('Erreur de récupération du flux');
 
         const data = await response.json();
-        if (data && data.items && data.items.length > 0) {
+        if (data && data.items && data.items.length > 0 && isSubscribed) {
           const articles = data.items.map((item, index) => ({
             id: index + 1,
             tag: 'France Info',
@@ -33,20 +39,28 @@ export default function FlashNewsWidget({ focused, isOnline }) {
           }));
           setFlashNews(articles);
           setCurrentNewsIndex(0);
-        } else {
+        } else if (isSubscribed) {
           throw new Error('Aucun article disponible');
         }
       } catch {
-        setNewsError('Impossible de charger les actualités');
-        setFlashNews([]);
+        if (isSubscribed) {
+          setNewsError('Impossible de charger les actualités');
+          setFlashNews([]);
+        }
       } finally {
-        setIsNewsLoading(false);
+        if (isSubscribed) {
+          setIsNewsLoading(false);
+        }
       }
     };
 
     fetchFranceInfoNews();
     const newsInterval = setInterval(fetchFranceInfoNews, 1800000);
-    return () => clearInterval(newsInterval);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(newsInterval);
+    };
   }, [isOnline]);
 
   useEffect(() => {

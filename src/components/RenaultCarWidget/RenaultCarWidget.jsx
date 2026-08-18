@@ -1,21 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import PdaCard from '../PdaCard/PdaCard';
 
 export default function RenaultCarWidget({ focused, isOnline }) {
     const [dataCar, setDataCar] = useState({});
     const [isRenaultCarLoading, setIsRenaultCarLoading] = useState(true);
     const [renaultCarError, setRenaultCarError] = useState(null);
+    
+    // Utilisation d'une référence pour suivre l'état de succès et adapter l'intervalle
+    const isSuccessRef = useRef(false);
 
     useEffect(() => {
+        let isSubscribed = true;
+
         const fetchRenaultCarData = async () => {
             if (!isOnline) {
-                setRenaultCarError('Hors ligne');
-                setIsRenaultCarLoading(false);
+                if (isSubscribed) {
+                    setRenaultCarError('Hors ligne');
+                    setIsRenaultCarLoading(false);
+                }
                 return;
             }
-
-            setIsRenaultCarLoading(true);
-            setRenaultCarError(null);
 
             try {
                 const jarvis_server_url = import.meta.env.VITE_JARVIS_SERVER_URL;
@@ -27,18 +31,33 @@ export default function RenaultCarWidget({ focused, isOnline }) {
 
                 if (!response.ok) throw new Error('Erreur de récupération des données Renault Car');
                 const data = await response.json();
-                setDataCar(data);
+                
+                if (isSubscribed) {
+                    setDataCar(data);
+                    setRenaultCarError(null);
+                    isSuccessRef.current = true;
+                }
             } catch {
-                setRenaultCarError('Impossible de charger les données Renault Car');
+                if (isSubscribed) {
+                    setRenaultCarError('Impossible de charger les données Renault Car');
+                    isSuccessRef.current = false;
+                }
             } finally {
-                setIsRenaultCarLoading(false);
+                if (isSubscribed) {
+                    setIsRenaultCarLoading(false);
+                }
             }
         };
 
         fetchRenaultCarData();
-        const intervalId = setInterval(fetchRenaultCarData, 2 * 60 * 60 * 1000);
 
-        return () => clearInterval(intervalId);
+        const intervalTime = isSuccessRef.current ? 2 * 60 * 60 * 1000 : 5 * 60 * 1000;
+        const intervalId = setInterval(fetchRenaultCarData, intervalTime);
+
+        return () => {
+            isSubscribed = false;
+            clearInterval(intervalId);
+        };
     }, [isOnline]);
 
     const fuelPercentage = Number(dataCar.fuel_percentage) || 0;

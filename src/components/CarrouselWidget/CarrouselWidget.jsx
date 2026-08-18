@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import PdaCard from '../PdaCard/PdaCard';
-import OfflinePlaceholder from '../OfflinePlaceholder/OfflinePlaceholder';
 
 // Liste de vos photos stockées dans public/carrousel/
 const CAROUSEL_IMAGES = [
@@ -14,10 +13,18 @@ export default function CarrouselWidget({ focused }) {
 
   // Changement automatique de photo toutes les 12 secondes avec fondu
   useEffect(() => {
+    let isSubscribed = true;
+
     const photoTimer = setInterval(() => {
-      setCurrentPhotoIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length);
+      if (isSubscribed) {
+        setCurrentPhotoIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length);
+      }
     }, 12000);
-    return () => clearInterval(photoTimer);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(photoTimer);
+    };
   }, []);
 
   return (
