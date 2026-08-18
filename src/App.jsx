@@ -24,7 +24,7 @@ const NETWORK_CHECK_URL = 'https://www.google.com/generate_204';
 const APPS_LIST = [
     { id: 3, name: "Netflix", action: "kodi-addon", target: "plugin.video.netflix", iconUrl: "/apps/netflix.png" },
     { id: 4, name: "YouTube", action: "kodi-addon", target: "plugin.video.youtube", iconUrl: "/apps/youtube.png" },
-    { id: 5, name: "Prime Vidéo", action: "kodi-addon", target: "plugin.video.primevideo", iconUrl: "/apps/prime.png" },
+    { id: 5, name: "Stremio", action: "stremio", iconUrl: "/apps/stremio.png" },
 ];
 
 // Composant d'horloge isolé pour éviter de rafraîchir tout le layout global chaque seconde
@@ -258,6 +258,11 @@ export default function App() {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ addonid: currentApp.target })
+                            }).catch(err => console.error("Erreur serveur Jarvis :", err));
+                        } else if (currentApp.action === "stremio") {
+                            fetch(`${JARVIS_SERVER_URL}/api/stremio`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
                             }).catch(err => console.error("Erreur serveur Jarvis :", err));
                         }
                     }
