@@ -3,6 +3,11 @@ import { rrulestr } from 'rrule';
 import PdaCard from '../PdaCard/PdaCard';
 import OfflinePlaceholder from '../OfflinePlaceholder/OfflinePlaceholder';
 
+const PIN_CODE = "5788"; 
+const AUTH_DURATION = 15 * 60 * 1000;
+const LOCKOUT_DURATION = 10 * 60 * 1000;
+const MAX_ATTEMPTS = 3;
+
 const ICAL_SOURCES = [
   {
     name: 'Just do it (Principal Proton)',
@@ -34,11 +39,9 @@ function parseICSLight(icsText, targetStart, targetEnd, targetStr, source) {
 
   for (let i = 1; i < rawBlocks.length; i++) {
     const block = rawBlocks[i].split('END:VEVENT')[0];
-
     if (block.includes('STATUS:CANCELLED')) {
       const uidMatch = block.match(/UID:(.*)/);
       const recurrenceIdMatch = block.match(/RECURRENCE-ID(;[^:]+)?:([\wT]+)/);
-
       if (uidMatch && recurrenceIdMatch) {
         const uid = uidMatch[1].trim();
         const recurrenceDateStr = recurrenceIdMatch[2].trim().substring(0, 8);
@@ -49,7 +52,6 @@ function parseICSLight(icsText, targetStart, targetEnd, targetStr, source) {
 
   for (let i = 1; i < rawBlocks.length; i++) {
     const block = rawBlocks[i].split('END:VEVENT')[0];
-
     if (block.includes('STATUS:CANCELLED')) continue;
 
     const uidMatch = block.match(/UID:(.*)/);
@@ -100,7 +102,7 @@ function parseICSLight(icsText, targetStart, targetEnd, targetStr, source) {
     if (Number.isNaN(startDate.getTime())) continue;
 
     if (rruleStr) {
-      if (source.ignoreRecurringWithoutWO && !summary.includes('WO ')) {
+      if ((source.ignoreRecurringWithoutWO && !summary.includes('WO ')) && !summary.includes('Messe')) {
         continue;
       }
 
@@ -166,9 +168,75 @@ export default function AgendaWidget({
 }) {
   const [events, setEvents] = useState([]);
   const [isAgendaLoading, setIsAgendaLoading] = useState(true);
+  
+  // États pour le PIN et le blocage
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState(false);
+  const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
+
+  // Vérification de l'authentification et du temps de blocage
+  useEffect(() => {
+    const checkStatus = () => {
+      const lockoutUntil = localStorage.getItem('agenda_lockout_until');
+      if (lockoutUntil) {
+        const remaining = parseInt(lockoutUntil, 10) - Date.now();
+        if (remaining > 0) {
+          setLockoutTimeLeft(Math.ceil(remaining / 1000));
+          setIsAuthenticated(false);
+          return;
+        } else {
+          localStorage.removeItem('agenda_lockout_until');
+          localStorage.setItem('agenda_attempts', '0');
+          setLockoutTimeLeft(0);
+        }
+      }
+
+      const lastAuth = localStorage.getItem('agenda_last_auth');
+      if (lastAuth && Date.now() - parseInt(lastAuth, 10) < AUTH_DURATION) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 1000); // Mise à jour chaque seconde pour le compte à rebours
+    return () => clearInterval(interval);
+  }, []);
+
+  const handlePinInput = (digit) => {
+    if (lockoutTimeLeft > 0) return;
+
+    setPinError(false);
+    const newPin = enteredPin + digit;
+
+    if (newPin.length === PIN_CODE.length) {
+      if (newPin === PIN_CODE) {
+        localStorage.setItem('agenda_last_auth', Date.now().toString());
+        localStorage.setItem('agenda_attempts', '0');
+        setIsAuthenticated(true);
+        setEnteredPin('');
+      } else {
+        const currentAttempts = parseInt(localStorage.getItem('agenda_attempts') || '0', 10) + 1;
+        localStorage.setItem('agenda_attempts', currentAttempts.toString());
+        setPinError(true);
+        setEnteredPin('');
+
+        if (currentAttempts >= MAX_ATTEMPTS) {
+          const lockoutUntil = Date.now() + LOCKOUT_DURATION;
+          localStorage.setItem('agenda_lockout_until', lockoutUntil.toString());
+          setLockoutTimeLeft(LOCKOUT_DURATION / 1000);
+        }
+      }
+    } else {
+      setEnteredPin(newPin);
+    }
+  };
 
   useEffect(() => {
     let isSubscribed = true;
+    if (!isAuthenticated) return;
 
     const loadAllCalendars = async () => {
       if (!isOnline) {
@@ -203,7 +271,7 @@ export default function AgendaWidget({
           const sourceEvents = parseICSLight(rawText, targetStart, targetEnd, targetStr, source);
           combinedEvents = combinedEvents.concat(sourceEvents);
         } catch {
-          // Ignore les échecs individuels de source pour ne pas bloquer les autres agendas
+          // Ignore les erreurs individuelles
         }
       }
 
@@ -219,67 +287,105 @@ export default function AgendaWidget({
     return () => {
       isSubscribed = false;
     };
-  }, [agendaDate, isOnline]);
+  }, [agendaDate, isOnline, isAuthenticated]);
+
+  const formatTimeLeft = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   return (
     <PdaCard
       focused={focused}
       locked={isAgendaLocked}
-      title={isTodayAgenda ? 'Agenda du jour' : `Agenda (${formattedAgendaDateLabel})`}
+      title={isTodayAgenda ? 'Agenda du jour' + (isAgendaLocked ? " 🔐" : "") : `Agenda (${formattedAgendaDateLabel})${isAgendaLocked ? " 🔐": ""}`}
       icon="📅"
       bodyStyle={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 50px)', overflow: 'hidden' }}
     >
-      <div
-        className="agenda-scroll-area"
-        ref={agendaContainerRef}
-        style={{
-          flex: '1 1 0px',
-          height: '0px',
-          overflowY: isAgendaLocked ? 'auto' : 'hidden',
-          paddingRight: '4px'
-        }}
-      >
-        {!isOnline ? (
-          <OfflinePlaceholder label="Agenda indisponible (hors ligne)" />
-        ) : isAgendaLoading ? (
-          <div className="agenda-loading">Chargement des agendas...</div>
-        ) : events.length === 0 ? (
-          <div className="agenda-empty">Aucun événement prévu ce jour.</div>
-        ) : (
-          <div className="agenda-feed">
-            {events.map((event, index) => (
-              <div key={index} className="agenda-item" style={{ borderLeftColor: event.color }}>
-                <span className="time-tag" style={{ color: event.color }}>
-                  {event.isAllDay ? 'Journée' : event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                <div className="details">
-                  <div className="title">{event.summary}</div>
-                  <div className="sub">
-                    {event.location && `📍 ${event.location}`}
-                    {event.location && event.sourceName && ' | '}
-                    {event.sourceName && `👤 ${event.sourceName}`}
-                  </div>
-                </div>
+      {!isAuthenticated ? (
+        <div className="agenda-pin-container">
+          {lockoutTimeLeft > 0 ? (
+            <div className="lockout-box">
+              <div className="lockout-icon">⏳</div>
+              <div className="lockout-title">Accès bloqué</div>
+              <div className="lockout-timer">Réessayez dans {formatTimeLeft(lockoutTimeLeft)}</div>
+            </div>
+          ) : (
+            <>
+              <div className="pin-title">🔒 Entrer le code PIN</div>
+              <div className={`pin-dots ${pinError ? 'error' : ''}`}>
+                {Array.from({ length: PIN_CODE.length }).map((_, i) => (
+                  <span key={i} className={`dot ${i < enteredPin.length ? 'filled' : ''}`} />
+                ))}
               </div>
-            ))}
+              {pinError && <div className="pin-error-text">Code incorrect</div>}
+              <div className="pin-pad">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((digit) => (
+                  <button key={digit} className="pin-btn" onClick={() => handlePinInput(digit)}>
+                    {digit}
+                  </button>
+                ))}
+                <button className="pin-btn clear" onClick={() => setEnteredPin('')}>⌫</button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <>
+          <div
+            className="agenda-scroll-area"
+            ref={agendaContainerRef}
+            style={{
+              flex: '1 1 0px',
+              height: '0px',
+              overflowY: isAgendaLocked ? 'auto' : 'hidden',
+              paddingRight: '4px'
+            }}
+          >
+            {!isOnline ? (
+              <OfflinePlaceholder label="Agenda indisponible (hors ligne)" />
+            ) : isAgendaLoading ? (
+              <div className="agenda-loading">Chargement des agendas...</div>
+            ) : events.length === 0 ? (
+              <div className="agenda-empty">Aucun événement prévu ce jour.</div>
+            ) : (
+              <div className="agenda-feed">
+                {events.map((event, index) => (
+                  <div key={index} className="agenda-item" style={{ borderLeftColor: event.color }}>
+                    <span className="time-tag" style={{ color: event.color }}>
+                      {event.isAllDay ? 'Journée' : event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <div className="details">
+                      <div className="title">{event.summary}</div>
+                      <div className="sub">
+                        {event.location && `📍 ${event.location}`}
+                        {event.location && event.sourceName && ' | '}
+                        {event.sourceName && `👤 ${event.sourceName}`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div
-        className="agenda-note"
-        style={{
-          fontSize: '0.7rem',
-          color: '#8b949e',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          paddingTop: '6px',
-          marginTop: '6px',
-          textAlign: 'center',
-          flexShrink: 0
-        }}
-      >
-        {isAgendaLocked ? '⬅️ ➡️ Changer de jour | [OK] Quitter' : '💡 [OK] Verrouiller pour changer de date'}
-      </div>
+          <div
+            className="agenda-note"
+            style={{
+              fontSize: '0.7rem',
+              color: '#8b949e',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              paddingTop: '6px',
+              marginTop: '6px',
+              textAlign: 'center',
+              flexShrink: 0
+            }}
+          >
+            {isAgendaLocked ? '⬅️ ➡️ Changer de jour | [OK] Quitter' : '💡 [OK] Verrouiller pour changer de date'}
+          </div>
+        </>
+      )}
     </PdaCard>
   );
 }

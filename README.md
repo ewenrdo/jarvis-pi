@@ -18,6 +18,9 @@ Ce projet est un assistant personnel pour écran en lecture seule, conçu pour f
 
 _Pour l'instant, il n'est pas possible de désactiver les widgets individuellement, mais cela pourrait être ajouté dans une future version._
 
+> [!NOTE]
+> Le code pour l'agenda est pour l'instant le même et il n'est pas modifiable : **5788**. Il est possible de le modifier dans le code source si nécessaire.
+
 ## Configuration de la dépendance
 
 Suivez l'installation du service sur [jarvis-pi-backend](https://github.com/ewenrdo/jarvis-pi-backend).
