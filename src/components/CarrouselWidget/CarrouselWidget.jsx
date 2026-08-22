@@ -5,7 +5,10 @@ import PdaCard from '../PdaCard/PdaCard';
 const CAROUSEL_IMAGES = [
   '/carrousel/photo1.jpeg',
   '/carrousel/photo2.jpeg',
-  '/carrousel/photo3.jpeg'
+  '/carrousel/photo3.jpeg',
+  '/carrousel/photo4.jpeg',
+  '/carrousel/photo5.jpeg',
+  '/carrousel/photo6.jpeg'
 ];
 
 export default function CarrouselWidget({ focused }) {
