@@ -5,7 +5,7 @@ import OfflinePlaceholder from '../OfflinePlaceholder/OfflinePlaceholder';
 
 const PIN_CODE = "5788"; 
 const AUTH_DURATION = 15 * 60 * 1000;
-const LOCKOUT_DURATION = 10 * 60 * 1000;
+const LOCKOUT_DURATION = 5 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 
 const ICAL_SOURCES = [
@@ -181,7 +181,8 @@ export default function AgendaWidget({
       const lockoutUntil = localStorage.getItem('agenda_lockout_until');
       if (lockoutUntil) {
         const remaining = parseInt(lockoutUntil, 10) - Date.now();
-        if (remaining > 0) {
+
+        if (remaining > 1 * 1000) { // une seconde de marge pour éviter les problèmes de synchronisation
           setLockoutTimeLeft(Math.ceil(remaining / 1000));
           setIsAuthenticated(false);
           return;
