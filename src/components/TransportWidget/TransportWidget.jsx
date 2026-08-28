@@ -1,12 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import PdaCard from '../PdaCard/PdaCard';
 
-const getTransportIcon = (lineRefValue) => {
-    if (lineRefValue.includes('::C')) return '🚆';
-    if (lineRefValue.includes('::B')) return '🚇';
-    if (lineRefValue.includes('::T')) return '🚋';
-    return '🚌';
+const getTransportColor = (lineRefValue) => {
+    const line = String(lineRefValue ?? '')
+        .trim()
+        .toUpperCase()
+        .replace(/^RER\s+/, '');
+
+    switch (line) {
+        case 'C':
+            return { backgroundColor: '#ffcc30', color: '#292828' };
+
+        case 'H':
+            return { backgroundColor: '#84653d', color: '#ffffff' };
+
+        case 'J':
+            return { backgroundColor: '#cec73d', color: '#292828' };
+
+        default:
+            console.warn('Ligne inconnue:', lineRefValue);
+            return { backgroundColor: '#8b949e', color: '#ffffff' };
+    }
 };
+
 
 export default function TransportWidget({ focused, isOnline }) {
     const [nextDepartures, setNextDepartures] = useState([]);
@@ -61,17 +77,20 @@ export default function TransportWidget({ focused, isOnline }) {
                         <div style={{ fontSize: '0.8rem', color: '#8b949e', textAlign: 'center', padding: '15px 10px' }}>Aucun départ disponible.</div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {nextDepartures.map((item) => (
+                            {nextDepartures.slice(0,15).map((item) => (
                                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
                                     <div>
                                         <span style={{ color: '#58a6ff', fontWeight: 600, fontSize: '0.9rem' }}>
-                                            {item.modeIcon} {item.expectedTime || item.aimedTime}
+                                            <span style={{ ...getTransportColor(item.shortLine), padding: '2px 6px', borderRadius: '4px', fontWeight: 600, marginRight: '6px' }}>
+                                                {item.journeyNote}
+                                            </span> {item.expectedTime || item.aimedTime}
                                         </span>
                                         {item.delay > 0 && (
                                             <span style={{ color: '#ff7b72', fontSize: '0.75rem', marginLeft: '6px' }}>(+{item.delay}m)</span>
                                         )}
                                         <div style={{ fontSize: '0.8rem', color: '#c9d1d9', marginTop: '2px', fontWeight: 500 }}>
-                                            ➔ {item.destination}
+                                           
+                                            {item.destination}
                                         </div>
                                     </div>
                                     <span style={{ fontSize: '0.75rem', color: '#8b949e' }}>
