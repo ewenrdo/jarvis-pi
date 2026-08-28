@@ -77,7 +77,7 @@ export default function TransportWidget({ focused, isOnline }) {
                         <div style={{ fontSize: '0.8rem', color: '#8b949e', textAlign: 'center', padding: '15px 10px' }}>Aucun départ disponible.</div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {nextDepartures.slice(0,15).map((item) => (
+                            {nextDepartures.slice(0,3).map((item) => (
                                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
                                     <div>
                                         <span style={{ color: '#58a6ff', fontWeight: 600, fontSize: '0.9rem' }}>
