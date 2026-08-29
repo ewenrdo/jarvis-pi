@@ -11,7 +11,7 @@ Ce projet est un assistant personnel pour écran en lecture seule, conçu pour f
 
 - Affichage de l'agenda avec synchronisation des événements à partir de plusieurs sources.
 - Affichage de la météo locale.
-- Carrousel d'images personnalisables.
+- Carrousel d'images personnalisables _(mettre les images dans le dossier `src/assets/carrousel/`)_.
 - Widget de transport pour afficher les prochains départs du RER C depuis une gare donnée.
 - Affichage des données d'une voiture Renault connectée.
 - Lecture du jour synchronisée avec l'[AELF](https://www.aelf.org/).
