@@ -314,7 +314,7 @@ export default function AgendaWidget({
             </div>
           ) : (
             <>
-              <div className="pin-title">🔒 Entrer le code PIN</div>
+              <div className="pin-title">Entrer le code PIN</div>
               <div className={`pin-dots ${pinError ? 'error' : ''}`}>
                 {Array.from({ length: PIN_CODE.length }).map((_, i) => (
                   <span key={i} className={`dot ${i < enteredPin.length ? 'filled' : ''}`} />
