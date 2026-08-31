@@ -24,7 +24,8 @@ const getTransportColor = (lineRefValue) => {
 };
 
 
-export default function TransportWidget({ focused, isOnline }) {
+
+export default function TransportWidget({ focused, isOnline, transportContainerRef }) {
     const [nextDepartures, setNextDepartures] = useState([]);
     const [isTransportLoading, setIsTransportLoading] = useState(true);
     const [transportError, setTransportError] = useState(null);
@@ -47,7 +48,7 @@ export default function TransportWidget({ focused, isOnline }) {
                 });
 
                 if (!response.ok) throw new Error('Erreur de récupération des données IDFM');
-              
+
                 const data = await response.json();
                 setNextDepartures(data);
                 setTransportError(null);
@@ -69,7 +70,7 @@ export default function TransportWidget({ focused, isOnline }) {
     return (
         <PdaCard focused={focused} title="Prochain départ RER C" icon="🚆" style={{ flex: 1 }}>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div className="transport-scroll-area" style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                <div className="transport-scroll-area" style={{ maxHeight: '210px', overflowY: 'hidden' }} ref={transportContainerRef}>
                     {isTransportLoading ? (
                         <div style={{ fontSize: '0.8rem', color: '#8b949e', textAlign: 'center', padding: '10px' }}>Chargement des départs...</div>
                     ) : transportError ? (
@@ -77,8 +78,9 @@ export default function TransportWidget({ focused, isOnline }) {
                     ) : nextDepartures.length === 0 ? (
                         <div style={{ fontSize: '0.8rem', color: '#8b949e', textAlign: 'center', padding: '15px 10px' }}>Aucun départ disponible.</div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {nextDepartures.slice(0,3).map((item) => (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                            {nextDepartures.slice(0, 10).map((item) => (
+
                                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
                                     <div>
                                         <span style={{ color: '#58a6ff', fontWeight: 600, fontSize: '0.9rem' }}>
@@ -90,7 +92,7 @@ export default function TransportWidget({ focused, isOnline }) {
                                             <span style={{ color: '#ff7b72', fontSize: '0.75rem', marginLeft: '6px' }}>(+{item.delay}m)</span>
                                         )}
                                         <div style={{ fontSize: '0.8rem', color: '#c9d1d9', marginTop: '2px', fontWeight: 500 }}>
-                                           
+
                                             {item.destination}
                                         </div>
                                     </div>

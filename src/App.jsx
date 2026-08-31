@@ -63,6 +63,7 @@ export default function App() {
 
     const agendaContainerRef = useRef(null);
     const modalBodyRef = useRef(null);
+    const transportContainerRef = useRef(null);
 
     const [playSwitch] = useSound(switchSound);
     const [playNotification] = useSound(notificationSound);
@@ -101,7 +102,7 @@ export default function App() {
                 const data = await response.json();
                 setNotifications(data);
                 setActiveNotificationIndex(data.length > 0 ? 0 : null);
-                if(data.length > 0) {
+                if (data.length > 0) {
                     playNotification();
                 }
             } catch (error) {
@@ -197,7 +198,7 @@ export default function App() {
             if (e.key === 'BrowserBack' || e.key === 'Backspace') {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 if (currentSt.showModal) {
                     setShowModal(false);
                 } else if (currentSt.showAppsMenu) {
@@ -289,12 +290,25 @@ export default function App() {
                         return;
                     }
                 }
-                
+
                 if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                     if (agendaContainerRef.current) {
                         e.preventDefault();
                         const scrollAmount = 60;
                         agendaContainerRef.current.scrollBy({
+                            top: e.key === 'ArrowDown' ? scrollAmount : -scrollAmount,
+                            behavior: 'smooth'
+                        });
+                    }
+
+                    return;
+                }
+            } else if (currentSt.focusedIndex === 1) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    if (transportContainerRef.current) {
+                        e.preventDefault();
+                        const scrollAmount = 60;
+                        transportContainerRef.current.scrollBy({
                             top: e.key === 'ArrowDown' ? scrollAmount : -scrollAmount,
                             behavior: 'smooth'
                         });
@@ -403,7 +417,7 @@ export default function App() {
                             />
                         </div>
                         <div className="transport-slot">
-                            <TransportWidget focused={focusedIndex === 1} isOnline={isOnline} />
+                            <TransportWidget focused={focusedIndex === 1} isOnline={isOnline} transportContainerRef={transportContainerRef} />
                         </div>
                     </div>
 
