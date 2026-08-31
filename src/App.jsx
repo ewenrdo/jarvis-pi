@@ -392,13 +392,12 @@ export default function App() {
                     <div className="top-right-cluster">
                         <div className="jarvis-logo-inline">
                             <span className="jarvis-text">JARVIS</span>
-                            <span className="jarvis-subtext">JARVIS OS 1.1</span>
+                            <span className="jarvis-subtext">JARVIS OS 1.2</span>
                         </div>
                         <div className="status-badges">
                             <div className={`badge ${isOnline ? 'online' : 'offline'}`}>
-                                <span className="dot">•</span> {isOnline ? 'Connecté' : 'Hors-ligne'}
+                                <span className="dot">•</span> {isOnline ? 'En ligne' : 'Hors-ligne'}
                             </div>
-                            <div className="badge remote"><span>🎮</span> Remote</div>
                         </div>
                     </div>
                 </header>
