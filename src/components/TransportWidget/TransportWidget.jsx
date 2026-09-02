@@ -62,7 +62,7 @@ export default function TransportWidget({ focused, isOnline, transportContainerR
         fetchTransportData();
 
         // Rafraîchissement automatique toutes les 2 minutes pour actualiser les horaires en continu
-        const transportInterval = setInterval(fetchTransportData, 15 * 60 * 1000);
+        const transportInterval = setInterval(fetchTransportData, 2 * 60 * 1000);
 
         return () => clearInterval(transportInterval);
     }, [isOnline]);
