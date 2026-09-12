@@ -170,7 +170,7 @@ export default function AgendaWidget({
   const [isAgendaLoading, setIsAgendaLoading] = useState(true);
   
   // États pour le PIN et le blocage
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); 
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState(false);
   const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
@@ -193,12 +193,13 @@ export default function AgendaWidget({
         }
       }
 
-      const lastAuth = localStorage.getItem('agenda_last_auth');
+      /*const lastAuth = localStorage.getItem('agenda_last_auth');
       if (lastAuth && Date.now() - parseInt(lastAuth, 10) < AUTH_DURATION) {
         setIsAuthenticated(true);
       } else {
         setIsAuthenticated(false);
-      }
+      }*/
+      setIsAuthenticated(true); // désactivé pour le moment, true par défaut.
     };
 
     checkStatus();

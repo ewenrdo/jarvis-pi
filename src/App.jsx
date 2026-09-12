@@ -283,6 +283,11 @@ export default function App() {
                     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                         e.preventDefault();
                         setAgendaDate((prevDate) => {
+                            // Empêcher d'aller à un jour antérieur à aujourd'hui
+                            if(prevDate.toDateString() === new Date().toDateString() && e.key === 'ArrowLeft') {
+                                return prevDate; // Ne rien faire si on est déjà sur aujourd'hui et qu'on essaie d'aller à gauche
+                            }
+
                             const newDate = new Date(prevDate);
                             newDate.setDate(newDate.getDate() + (e.key === 'ArrowRight' ? 1 : -1));
                             return newDate;
