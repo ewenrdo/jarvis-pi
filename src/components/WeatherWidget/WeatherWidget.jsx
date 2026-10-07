@@ -26,27 +26,40 @@ export default function WeatherWidget({ focused, isOnline }) {
           const currentTemp = `${Math.round(data.current_weather.temperature)}°C`;
           const currentHourIndex = new Date().getHours();
           const remainingDayCodes = data.hourly.weathercode.slice(currentHourIndex);
-          const rainCodes = [51, 53, 55, 56, 57, 61, 62, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
+          const rainCodes = [55, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
           const willRainLater = remainingDayCodes.some((code) => rainCodes.includes(code));
 
           const weatherMap = {
-            0: 'Ensoleillé',
-            1: 'Principalement clair',
-            2: 'Partiellement nuageux',
-            3: 'Couvert',
-            45: 'Brumeux',
-            48: 'Brouillard givrant',
-            51: 'Bruine légère',
-            53: 'Bruine modérée',
-            55: 'Bruine dense',
-            61: 'Pluie légère',
-            62: 'Pluie modérée',
-            63: 'Pluie forte',
-            71: 'Neige légère',
-            73: 'Neige modérée',
-            75: 'Neige forte',
-            95: 'Orageux'
-          };
+            "0": "Ciel dégagé",
+            "1": "Principalement dégagé",
+            "2": "Partiellement nuageux",
+            "3": "Couvert",
+            "45": "Brouillard",
+            "48": "Brouillard givrant",
+            "51": "Bruine légère",
+            "53": "Bruine modérée",
+            "55": "Bruine dense",
+            "56": "Bruine verglaçante légère",
+            "57": "Bruine verglaçante dense",
+            "61": "Pluie faible",
+            "63": "Pluie modérée",
+            "65": "Pluie forte",
+            "66": "Pluie verglaçante légère",
+            "67": "Pluie verglaçante forte",
+            "71": "Chute de neige faible",
+            "73": "Chute de neige modérée",
+            "75": "Chute de neige forte",
+            "77": "Grains de neige",
+            "80": "Averses faibles",
+            "81": "Averses modérées",
+            "82": "Averses violentes",
+            "85": "Averse de neige faibles",
+            "86": "Averse de neige fortes",
+            "95": "Orage",
+            "96": "Orage avec grêle légère",
+            "97": "Orage fort",
+            "99": "Orage avec grêle forte"
+          }
 
           let description = weatherMap[data.current_weather.weathercode] || 'Variable';
           if (!rainCodes.includes(data.current_weather.weathercode) && willRainLater) {
@@ -63,7 +76,7 @@ export default function WeatherWidget({ focused, isOnline }) {
     };
 
     fetchWeather();
-    const weatherInterval = setInterval(fetchWeather, 60 * 60 *1000);
+    const weatherInterval = setInterval(fetchWeather, 60 * 60 * 1000);
 
     return () => {
       isSubscribed = false;
