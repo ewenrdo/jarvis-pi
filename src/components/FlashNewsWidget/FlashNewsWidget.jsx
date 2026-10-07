@@ -10,7 +10,7 @@ export default function FlashNewsWidget({ focused, isOnline }) {
   useEffect(() => {
     let isSubscribed = true;
 
-    const fetchFranceInfoNews = async () => {
+    const fetchAllNews = async () => {
       if (!isOnline) {
         if (isSubscribed) {
           setNewsError('Hors ligne');
@@ -25,19 +25,46 @@ export default function FlashNewsWidget({ focused, isOnline }) {
       }
 
       try {
-        const rssUrl = encodeURIComponent('https://www.franceinfo.fr/titres.rss');
-        const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
-        if (!response.ok) throw new Error('Erreur de récupération du flux');
+        const sources = [
+          { name: 'France Info', url: 'https://www.franceinfo.fr/titres.rss' },
+          { name: 'Le Monde', url: 'https://www.lemonde.fr/rss/une.xml' }
+        ];
 
-        const data = await response.json();
-        if (data && data.items && data.items.length > 0 && isSubscribed) {
-          const articles = data.items.map((item, index) => ({
+        const requests = sources.map(source =>
+          fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`)
+            .then(res => res.json())
+            .then(data => ({ source: source.name, items: data.items || [] }))
+        );
+
+        const results = await Promise.allSettled(requests);
+
+        let combinedArticles = [];
+
+        results.forEach(result => {
+          if (result.status === 'fulfilled' && result.value.items.length > 0) {
+            const sourceArticles = result.value.items.map(item => ({
+              tag: result.value.source,
+              title: item.title,
+              link: item.link,
+              pubDate: new Date(item.pubDate).getTime() // Pour le tri chronologique
+            }));
+            combinedArticles.push(...sourceArticles);
+          }
+        });
+
+        if (combinedArticles.length > 0 && isSubscribed) {
+          // Tri du plus récent au plus ancien
+          combinedArticles.sort((a, b) => b.pubDate - a.pubDate);
+
+          // Re-numérotation des identifiants uniques
+          const formattedArticles = combinedArticles.map((article, index) => ({
             id: index + 1,
-            tag: 'France Info',
-            title: item.title,
-            link: item.link
+            tag: article.tag,
+            title: article.title,
+            link: article.link
           }));
-          setFlashNews(articles);
+
+          setFlashNews(formattedArticles.slice(0, 10)); // Limite à 10 articles
           setCurrentNewsIndex(0);
         } else if (isSubscribed) {
           throw new Error('Aucun article disponible');
@@ -53,9 +80,8 @@ export default function FlashNewsWidget({ focused, isOnline }) {
         }
       }
     };
-
-    fetchFranceInfoNews();
-    const newsInterval = setInterval(fetchFranceInfoNews, 1800000);
+    fetchAllNews();
+    const newsInterval = setInterval(fetchAllNews, 1800000);
 
     return () => {
       isSubscribed = false;
@@ -67,7 +93,7 @@ export default function FlashNewsWidget({ focused, isOnline }) {
     if (flashNews.length === 0) return;
     const newsTimer = setInterval(() => {
       setCurrentNewsIndex((prev) => (prev + 1) % flashNews.length);
-    }, 6000);
+    }, 10 * 1000);
     return () => clearInterval(newsTimer);
   }, [flashNews.length]);
 
