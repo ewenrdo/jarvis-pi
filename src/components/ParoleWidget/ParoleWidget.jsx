@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PdaCard from '../PdaCard/PdaCard';
 
 export default function ParoleWidget({ focused, isOnline, onOpen, onParoleLoaded }) {
     const [parole, setParole] = useState(null);
+    const previousParoleRef = useRef(null);
+    const onOpenRef = useRef(onOpen);
+    onOpenRef.current = onOpen;
 
     useEffect(() => {
         let isSubscribed = true;
@@ -11,6 +14,7 @@ export default function ParoleWidget({ focused, isOnline, onOpen, onParoleLoaded
             if (!isOnline) {
                 if (isSubscribed) {
                     setParole(null);
+                    previousParoleRef.current = null;
                     onParoleLoaded?.(null);
                 }
                 return;
@@ -34,9 +38,19 @@ export default function ParoleWidget({ focused, isOnline, onOpen, onParoleLoaded
                         intro: premier.intro_lue,
                         contenu: fullContent
                     };
+                    const previousParole = previousParoleRef.current;
+                    const isNewParole = previousParole
+                        && (previousParole.titre !== nextParole.titre
+                            || previousParole.ref !== nextParole.ref
+                            || previousParole.intro !== nextParole.intro
+                            || previousParole.contenu !== nextParole.contenu);
 
                     setParole(nextParole);
+                    previousParoleRef.current = nextParole;
                     onParoleLoaded?.(nextParole);
+                    if (isNewParole) {
+                        onOpenRef.current?.();
+                    }
                 }
             } catch {
                 // Le widget conserve son état ou gère l'absence de données sans bloquer l'interface
