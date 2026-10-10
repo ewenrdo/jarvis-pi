@@ -18,7 +18,7 @@ export default function WeatherWidget({ focused, isOnline }) {
       try {
         const lat = import.meta.env.VITE_LATITUDE || 0;
         const lon = import.meta.env.VITE_LONGITUDE || 0;
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=weathercode`);
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=weathercode&timezone=auto`);
         if (!response.ok) throw new Error('Erreur météo');
 
         const data = await response.json();
@@ -70,7 +70,10 @@ export default function WeatherWidget({ focused, isOnline }) {
         }
       } catch {
         if (isSubscribed) {
-          setWeather({ temp: '--', desc: 'Erreur météo', isLoaded: false });
+          setWeather({ 
+            temp: weather.temp || '--', 
+            desc: 'Erreur météo, non actualisé', 
+            isLoaded: false });
         }
       }
     };
