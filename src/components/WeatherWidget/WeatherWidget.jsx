@@ -3,6 +3,7 @@ import PdaCard from '../PdaCard/PdaCard';
 
 export default function WeatherWidget({ focused, isOnline }) {
   const [weather, setWeather] = useState({ temp: '--', desc: 'Chargement...', isLoaded: false });
+  const [errorAmount, setErrorAmount] = useState(0);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -67,6 +68,7 @@ export default function WeatherWidget({ focused, isOnline }) {
           }
 
           setWeather({ temp: currentTemp, desc: description, isLoaded: true });
+          setErrorAmount(0);
         }
       } catch {
         if (isSubscribed) {
@@ -74,12 +76,17 @@ export default function WeatherWidget({ focused, isOnline }) {
             temp: weather.temp || '--', 
             desc: 'Erreur météo, non actualisé', 
             isLoaded: false });
+          setErrorAmount(prev => prev + 1);
+          if(errorAmount >= 2) {
+            // actualiser la page
+            window.location.reload();
+          }
         }
       }
     };
 
     fetchWeather();
-    const weatherInterval = setInterval(fetchWeather, 60 * 60 * 1000);
+    const weatherInterval = setInterval(fetchWeather, 30 * 60 * 1000);
 
     return () => {
       isSubscribed = false;
