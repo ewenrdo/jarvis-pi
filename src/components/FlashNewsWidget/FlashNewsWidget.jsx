@@ -100,7 +100,7 @@ export default function FlashNewsWidget({ focused, isOnline }) {
   const headerRight = (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       {!isNewsLoading && !newsError && flashNews.length > 0 && (
-        <span style={{ fontSize: '0.75rem', color: '#4d3622', background: '#c9a36f', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+        <span style={{ fontSize: '0.75rem', color: '#8b949e', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
           {currentNewsIndex + 1}/{flashNews.length}
         </span>
       )}

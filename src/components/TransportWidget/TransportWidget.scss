@@ -9,11 +9,11 @@
 
     .transport-status {
         text-align: center;
-        color: #756957;
+        color: #8b949e;
         font-size: 0.85rem;
 
         &.error {
-            color: #9d5c43;
+            color: #ff7b72;
         }
     }
 
@@ -35,14 +35,13 @@
                 height: 10px;
                 background-color: #2ea043;
                 border-radius: 50%;
-                box-shadow: none;
-                border: 1px solid rgba(67, 83, 55, 0.45);
+                box-shadow: 0 0 10px 3px rgba(46, 160, 67, 0.7);
                 margin-right: 0.3rem;
             }
 
             .departure-text {
                 font-size: 1.15rem;
-                color: #657b5e;
+                color: #3fb950;
                 font-weight: 500;
 
                 strong {
@@ -66,7 +65,7 @@
             }
 
             .chain-arrow {
-                color: #756957;
+                color: #8b949e;
                 font-size: 0.9rem;
                 font-weight: 600;
             }
@@ -79,15 +78,15 @@
             justify-content: center;
             gap: 0.4rem;
             font-size: 0.9rem;
-            color: #4d4030;
+            color: #c9d1d9;
 
             .station-dep, .station-arr {
                 font-weight: 500;
-                color: #403426;
+                color: #e6edf3;
             }
 
             .time {
-                color: #756957;
+                color: #8b949e;
                 font-size: 0.85rem;
             }
 
@@ -102,12 +101,12 @@
             font-size: 0.75rem;
             color: #8b949e;
             text-align: center;
-            border-top: 1px solid rgba(92, 68, 43, 0.18);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
             padding-top: 0.5rem;
             width: 100%;
 
             strong {
-                color: #5c4b38;
+                color: #c9d1d9;
                 font-weight: 600;
             }
         }
@@ -120,26 +119,26 @@
     justify-content: center;
     gap: 0.4rem;
     font-size: 0.9rem;
-    color: #4d4030;
+    color: #c9d1d9;
 
     .station-dep, .station-arr {
         font-weight: 500;
-        color: #403426;
+        color: #e6edf3;
     }
 
     .train-time {
-        color: #806b58;
+        color: #58a6ff;
         font-weight: 600;
         font-size: 0.85rem;
     }
 
     .time {
-        color: #756957;
+        color: #8b949e;
         font-size: 0.85rem;
     }
 
     .arrow {
-        color: #756957;
+        color: #8b949e;
         margin: 0 0.1rem;
     }
 }

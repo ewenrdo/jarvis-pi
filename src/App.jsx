@@ -17,7 +17,7 @@ import switchSound from './assets/sounds/switch.mp3';
 import notificationSound from './assets/sounds/notification.mp3';
 import menuSound from './assets/sounds/menu.mp3';
 
-const DEFAULT_BG = "/texture.jpg";
+const DEFAULT_BG = "https://images.unsplash.com/photo-1774434923581-91ed9d8ee79b?q=80&w=1920&auto=format&fit=crop";
 const JARVIS_SERVER_URL = import.meta.env.VITE_JARVIS_SERVER_URL || 'http://localhost:5788';
 const NETWORK_CHECK_URL = 'https://www.google.com/generate_204';
 
